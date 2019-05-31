@@ -105,7 +105,7 @@ public class Server
 
                     var any = new IPEndPoint(IPAddress.Any, port);
                     var listener = new UdpClient(port);
-                    listener.BeginReceive(new AsyncCallback(AcceptCallback), new StateObject { endPoint = any, udpClient = listener });
+                    listener.BeginReceive(new AsyncCallback(AcceptCallback), new StateObject { endPoint = any, udpClient = listener, allDone = allDone });
 
                     allDone.WaitOne();
                 }
