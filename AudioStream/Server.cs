@@ -64,26 +64,29 @@ public class Server
 
     public static void SearchForLocalReceivers(int port, Action<IEnumerable<IPAddress>> callback)
     {
-        UdpClient broadcast = new UdpClient(port + (new Random().Next() % 100));
-        byte[] msg = Encoding.ASCII.GetBytes("ping");
-        broadcast.BeginSend(msg, msg.Length, new IPEndPoint(IPAddress.Broadcast, port), ar => { broadcast.EndSend(ar); }, null);
-
-        var list = new List<IPEndPoint>();
-
         Task.Run(() =>
         {
-            var timeout = DateTime.UtcNow + TimeSpan.FromSeconds(1);
+            UdpClient broadcast = new UdpClient(port);
+            byte[] msg = Encoding.ASCII.GetBytes("ping");
+            broadcast.Send(msg, msg.Length, new IPEndPoint(IPAddress.Broadcast, port));
 
-            Console.WriteLine("start");
-            while (timeout < DateTime.UtcNow)
+            var list = new List<IPAddress>();
+            IPAddress myself = LocalIPAddress();
+
+            broadcast.Client.ReceiveTimeout = 1000;
+            try // Catch the timeout exception 
             {
-                var any = new IPEndPoint(IPAddress.Any, port);
-                UdpClient listener = new UdpClient();
-                var data = listener.Receive(ref any);
-                Console.WriteLine(any);
-                list.Add(any);
+                while (true)
+                {
+                    var any = new IPEndPoint(IPAddress.Any, port);
+                    var data = broadcast.Receive(ref any);
+                    if (any.Address.ToString() != myself.ToString())
+                        list.Add(any.Address);
+                }
             }
+            catch { }
             broadcast.Close();
+            callback(list);
         });
     }
 
