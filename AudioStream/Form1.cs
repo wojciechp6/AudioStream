@@ -23,7 +23,7 @@ namespace AudioStream
             InitializeComponent();
             IPLabel.Text += Server.LocalIPAddress();
 
-            Server.SearchForLocalReceivers(1000, list =>
+            Server.SearchForLocalReceivers(int.Parse(portBox.Text), list =>
                 Invoke((MethodInvoker)delegate ()
                 {
                     var l = list.ToArray();
@@ -46,7 +46,7 @@ namespace AudioStream
             (sender as Button).Text = "Stop receiving";
             OutDevice.Enabled = false;
 
-            Server server = Server.StartListening(int.Parse(receivePortBox.Text));
+            Server server = Server.StartListening(int.Parse(portBox.Text));
             WaveOutEvent waveOut = new WaveOutEvent();
             waveOut.DeviceNumber = OutDevice.SelectedIndex;
             waveProvider = new BufferedWaveProvider(new WasapiLoopbackCapture().WaveFormat);
@@ -61,7 +61,7 @@ namespace AudioStream
 
         private void TransmitButton_Click(object sender, EventArgs e)
         {
-            Server client = Server.Connect((IpChooseBox.SelectedValue as System.Net.IPAddress).GetAddressBytes(), 1000);
+            Server client = Server.Connect((IpChooseBox.SelectedValue as System.Net.IPAddress).GetAddressBytes(), int.Parse(portBox.Text));
             loopbackCapture = new WasapiLoopbackCapture(devices[InDevice.SelectedIndex]);
 
             loopbackCapture.StartRecording();
