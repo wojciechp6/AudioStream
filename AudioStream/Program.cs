@@ -23,7 +23,8 @@ namespace AudioStream
         {
             foreach (string item in enumeration)
             {
-                yield return byte.Parse(item);
+                if (byte.TryParse(item, out byte t))
+                    yield return t;
             }
         }
 

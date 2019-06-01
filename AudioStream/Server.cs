@@ -44,6 +44,7 @@ public class Server
 
         UdpClient client = new UdpClient();
         client.Connect(endPoint);
+        Console.WriteLine(endPoint);
 
         return new Server(client, port, false);
     }
@@ -66,27 +67,33 @@ public class Server
     {
         Task.Run(() =>
         {
-            UdpClient broadcast = new UdpClient(port);
-            byte[] msg = Encoding.ASCII.GetBytes("ping");
-            broadcast.Send(msg, msg.Length, new IPEndPoint(IPAddress.Broadcast, port));
-
-            var list = new List<IPAddress>();
-            IPAddress myself = LocalIPAddress();
-
-            broadcast.Client.ReceiveTimeout = 1000;
-            try // Catch the timeout exception 
+            try
             {
-                while (true)
+                UdpClient broadcast = new UdpClient(port);
+                byte[] msg = Encoding.ASCII.GetBytes("ping");
+                broadcast.Send(msg, msg.Length, new IPEndPoint(IPAddress.Broadcast, port));
+
+                var list = new List<IPAddress>();
+                IPAddress myself = LocalIPAddress();
+
+                broadcast.Client.ReceiveTimeout = 500;
+                try // Catch the timeout exception 
                 {
-                    var any = new IPEndPoint(IPAddress.Any, port);
-                    var data = broadcast.Receive(ref any);
-                    if (any.Address.ToString() != myself.ToString())
-                        list.Add(any.Address);
+                    while (true)
+                    {
+                        var any = new IPEndPoint(IPAddress.Any, port);
+                        var data = broadcast.Receive(ref any);
+                        if (any.Address.ToString() != myself.ToString())
+                        {
+                            list.Add(any.Address);
+                            callback(list);
+                        }
+                    }
                 }
+                catch { }
+                broadcast.Close();
             }
             catch { }
-            broadcast.Close();
-            callback(list);
         });
     }
 
