@@ -14,6 +14,11 @@ namespace AudioStream
         [STAThread]
         static void Main()
         {
+            if (Server.LocalIPAddress() == null)
+            {
+                MessageBox.Show("You are not connected to network :(. I need network. Bye.");
+                return;
+            }
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new Form1());
@@ -27,6 +32,15 @@ namespace AudioStream
                     yield return t;
             }
         }
+
+        public static void Print<T>(this IEnumerable<T> enumeration)
+        {
+            foreach (T item in enumeration)
+            {
+                Console.Write(item);
+            }
+        }
+
 
         public static void ForEach<T>(this IEnumerable<T> enumeration, Action<T> action)
         {

@@ -23,11 +23,11 @@ namespace AudioStream
         public Form1()
         {
             InitializeComponent();
+
             IPLabel.Text = Server.LocalIPAddress().ToString();
 
             IpChooseBox.Items.Add("Custom");
             IpChooseBox.SelectedIndex = 0;
-            UpdateReceivers(true);
 
             IpChooseBox.Click += (s, args) => UpdateReceivers();
 
@@ -39,6 +39,7 @@ namespace AudioStream
             OutDevice.SelectedIndex = 0;
             InDevice.SelectedIndex = 0;
 
+            UpdateReceivers(true);
         }
 
         private void ReceiveButton_Click(object sender, EventArgs e)
@@ -46,10 +47,23 @@ namespace AudioStream
             (sender as Button).Text = "Stop receiving";
             OutDevice.Enabled = false;
 
-            Server server = Server.StartListening(int.Parse(portBox.Text));
+            Server server = null;
+            try
+            {
+                server = Server.StartListening(int.Parse(portBox.Text));
+            }
+            catch
+            {
+                MessageBox.Show("This port is already in use. Select another one :)");
+            }
+            if (server == null)
+                return;
+
             waveOut = new WaveOutEvent();
             waveOut.DeviceNumber = OutDevice.SelectedIndex;
             waveOutProvider = new BufferedWaveProvider(new WasapiLoopbackCapture().WaveFormat);
+            waveOutProvider.BufferDuration = TimeSpan.FromSeconds(5);
+            waveOutProvider.DiscardOnBufferOverflow = true;
 
             waveOut.Init(waveOutProvider);
             waveOut.Volume = RxVolume.Volume;
@@ -105,33 +119,28 @@ namespace AudioStream
 
         private void UpdateReceivers(bool resetIndex = false)
         {
+            Console.WriteLine("start");
             Server.SearchForLocalReceivers(int.Parse(portBox.Text), list =>
+            {
+                Console.WriteLine("end");
+
                 Invoke((MethodInvoker)delegate ()
-                {
-                    IpChooseBox.Items.Clear();
-                    IpChooseBox.Items.AddRange(list.ToArray());
-                    IpChooseBox.Items.Add("Custom");
-                    if (resetIndex)
-                        IpChooseBox.SelectedIndex = 0;
-                }));
+                    {
+                        Console.WriteLine("end");
+                        IpChooseBox.Items.Clear();
+                        IpChooseBox.Items.AddRange(list.ToArray());
+                        IpChooseBox.Items.Add("Custom");
+                        if (resetIndex)
+                            IpChooseBox.SelectedIndex = 0;
+                    });
+            });
+            
         }
 
-        private byte[] AdjustVolume(byte[] audioSamples, float volume)
+        private byte[] AdjustVolume(byte[] audioBuffer, float volume)
         {
-            byte[] array = new byte[audioSamples.Length];
-            for (int i = 0; i < array.Length; i += 2)
-            {
-                // convert byte pair to int
-                short audioSample = (short)(((audioSamples[i + 1] & 0xff) << 8) | (audioSamples[i] & 0xff));
-
-                audioSample = (short)(audioSample * volume);
-
-                // convert back
-                array[i] = (byte)audioSample;
-                array[i + 1] = (byte)(audioSample >> 8);
-
-            }
-            return array;
+            
+            return audioBuffer;
         }
     }
 }

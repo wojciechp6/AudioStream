@@ -34,6 +34,7 @@ public class Server
 
     public static Server StartListening(int port)
     {
+        new UdpClient(port).Close(); // If socket is in use this will throw an exception
         return new Server(null, port, true);
     }
 
