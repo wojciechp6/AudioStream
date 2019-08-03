@@ -61,7 +61,7 @@ namespace AudioStream
 
             waveOut = new WaveOutEvent();
             waveOut.DeviceNumber = OutDevice.SelectedIndex;
-            waveOutProvider = new BufferedWaveProvider(new WasapiLoopbackCapture().WaveFormat);
+            waveOutProvider = new BufferedWaveProvider(new WaveFormat(48000, 16, 2));
             waveOutProvider.BufferDuration = TimeSpan.FromSeconds(5);
             waveOutProvider.DiscardOnBufferOverflow = true;
 
@@ -107,6 +107,8 @@ namespace AudioStream
                 client.Send(AdjustVolume(args.Buffer, TxVolume.Volume), args.BytesRecorded);
             loopbackCapture.DataAvailable += onCapturedFunc;
             loopbackCapture.StartRecording();
+            var loopbackWaveFormat = loopbackCapture.WaveFormat;
+            loopbackCapture.WaveFormat = new WaveFormat(48000, 16, 2);
 
             FormClosed += (s, args) =>
             {
